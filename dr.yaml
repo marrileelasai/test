@@ -1,0 +1,135 @@
+ImageValue: azcontainerregistryd1.azurecr.io/erebor-submission-producer:latest
+application:
+  name: erebor-submission-producer
+  component: erebor-submission-producer
+  labels:
+    - key: azure.workload.identity/use
+      name: "true"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 75 #related to performance tuning
+  targetMemoryUtilizationPercentage: 75 #related to performance tuning
+
+
+serviceAccount:
+  enabled: true
+  clientID: "44f86262-08c4-4cd5-aaa4-1d3e0d5f0066"  #erebor-submission-producer-user-managed-identity-aks-prod
+
+######################################################################################
+## Mandating - container should run as non root user, to disable root file system access.
+######################################################################################
+securityContext:
+  enabled: false
+  readOnlyRootFilesystem: file
+
+limitranges:
+  maxMemory: 4Gi  # Maximum memory limit per container
+
+######################################################
+## blobpvc Configuration --
+## To mount storage account blob on top of the kubernetes container.
+#Note: Workload Managed identity should be provided with blob data storage access
+######################################################
+blobpvc:
+  enabled: true                     # - Flag to enable/disable the blobpvc functionality
+  storage: 5Gi                      #   Storage size you can set it up as per your requirement
+  storageAccountName: ereborsaprod  #  Storage Account Name
+  blobContainerName: documents          #   Blob container Name within Storage Account
+  resourceGroupName: Erebor-Prod-RG #   Storage Account Resource Group Name
+  path: "/input/payloads"                #   I set mount path to /mnt/blob as a default in Chart. You can overwrite. (optional) later discussion
+
+    ######################################################
+    ## secretsCSI Configuration
+    ######################################################
+    #dbsecretCSI:
+    #enabled: true
+    #keyvaultName: "MtLoganRe-KV-DBA-DEV"
+    #secrets:
+    # - "Azure-SQL-MTL-SQL-User-Dev"
+
+deployment:
+  terminationGracePeriodSeconds: 30
+  replicas: 1
+  strategy:
+    # Ramped Slow Rollout
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  resources:  #62-68 performance tuning
+    limits:
+      cpu: 1
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 1Gi
+  startupProbe:
+    path: /actuator
+    failureThreshold: 30
+    periodSeconds: 10
+    initialDelaySeconds: 50
+
+  livenessProbe:
+    path: /actuator/health
+    failureThreshold: 3
+    periodSeconds: 15
+    timeoutSeconds: 5
+
+  readinessProbe:
+    path: /actuator/health
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+configMap:
+  KAFKA_HOSTNAME: lkc-dyp9my.dom1w42nz2g.eastus2.azure.confluent.cloud:9092 #file from platform team
+  DB_HOSTNAME: jdbc:postgresql://erazeborpgsqlp.writer.postgres.database.azure.com:5432/erebordb
+  DB_VAULTURL: https://erebor-kv-dba-prod.vault.azure.net/
+  #enabled: true  # Only true if the app actually uses a ConfigMap
+
+useDirectEnv: true
+env:
+  AZURE_KEYVAULT_URI: https://erebor-kv-prod.vault.azure.net/
+
+######################################################
+## K8S Service Configuration
+######################################################
+
+service:
+  type: ClusterIP
+  port: 8080
+  #targetPort: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    - key: nginx.ingress.kubernetes.io/proxy-body-size # Allows unlimited body size to avoid `entity too large` errors.
+      name: '5m'
+    - key: nginx.ingress.kubernetes.io/proxy-connect-timeout  # below annotations added to resolve upstream connection timeout to handle long connections.
+      name: '60'
+    - key: nginx.ingress.kubernetes.io/proxy-send-timeout
+      name: '60'
+    - key: nginx.ingress.kubernetes.io/proxy-read-timeout
+      name: '60'
+    - key: nginx.ingress.kubernetes.io/send-timeout
+      name: '60'
+
+  hosts:
+    - host: erebor-submission-producer.prod.caas.everestre.net
+      paths:
+        - path: /
+          pathType: Prefix
+
+    - host: erebor-submission-producer.dr.caas.everestre.net
+      paths:
+        - path: /
+          pathType: Prefix
+
+  tls:
+    - hosts:
+        - erebor-submission-producer.prod.caas.everestre.net
+        - erebor-submission-producer.dr.caas.everestre.net

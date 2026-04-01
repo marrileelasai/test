@@ -1,0 +1,138 @@
+spring:
+  application:
+    name: ot-orchestrator
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration    
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+camel:
+  health:
+    enabled: true
+    registry-enabled: true
+    readiness-checks-enabled: true
+    liveness-checks-enabled: false
+  rest:
+    context-path: /api
+  springdoc:
+    default-produces-media-type: application/json
+    paths-to-match:
+      - /api/**
+  main:
+    useMdcLogging: true
+    mdcLoggingKeysPattern: "*"
+    debug: true
+  threadpool:
+    # Thread pool for parallel category updates
+    config:
+      categoryUpdateExecutor:
+        pool-size: 10
+        max-pool-size: 20
+        max-queue-size: 100
+  springboot:
+    name: ot_orchestrator
+  component:
+    netty-http:
+      path: /api
+    http:
+      # SSL configuration is conditional:
+      # - Local dev: Routes append &sslContextParameters=#allowAllSSLContextParameters (when bean exists)
+      # - Production: Routes use default SSL validation (no sslContextParameters parameter)
+      cookie-management: false
+    kafka:
+      brokers: ${KAFKA_HOSTNAME}
+      groupId: ${KAFKA_GROUPID}
+      clientId: ${KAFKA_CLIENTID}
+      autoCommitEnable: true
+      maxPollRecords: 5
+      autoOffsetReset: latest
+      securityProtocol: SASL_SSL
+      saslMechanism: PLAIN
+      saslJaasConfig: >
+        org.apache.kafka.common.security.plain.PlainLoginModule required username="${az_kv(vault=${{AZURE_KEYVAULT_URI}}):edms-kafka-submission-username}" password="${az_kv(vault=${{AZURE_KEYVAULT_URI}}):edms-kafka-submission-password}";
+      sslEndpointIdentificationAlgorithm: https
+      acks: all
+      retries: 3
+      reconnect.backoff.ms: 1000
+      reconnect.backoff.max.ms: 30000
+      retry.backoff.ms: 1000
+      max.poll.interval.ms: 180000      # 3 minutes
+      session.timeout.ms: 30000         # 30 seconds
+      heartbeat.interval.ms: 10000      # 10 seconds (must be < session.timeout.ms)
+      auto.commit.interval.ms: 4000     # 4 seconds
+      #value-deserializer: com.brotherhood.submission.consumer.beans.TraceparentFixingDeserializer
+      #key-deserializer: org.apache.kafka.common.serialiaztion.StringDeserializer
+
+
+app:
+  KAFKA_SUBMISSION_TOPIC: ${KAFKA_TOPIC}
+  KAFKA_THREAD_POOL_MIN: 10
+  KAFKA_THREAD_POOL_MAX: 20
+  NETTY_MOCK_HOST: "0.0.0.0"
+  NETTY_MOCK_PORT: 8084
+  OTCS_BASE_URL: ${OTCS_BASE_URL}
+  OTCS_USERNAME: ${OTCS_USERNAME}
+  OTCS_PASSWORD: ${OTCS_PASSWORD}
+  FILE_UPLOAD_PATH: "/mnt/sftp-volume"  # Azure File Share mounted via CSI driver
+  BASE_URL: ${OTCS_BASE_URL}
+  BASE_WEBREPORTS_URL: ${BASE_WEBREPORTS_URL}
+  WEBREPORTS_ENV: ${WEBREPORTS_ENV:DEV}
+  SSL_BYPASS_ENABLED: ${SSL_BYPASS_ENABLED}
+  OTCS_DOCUMENT_SUBTYPE: "144"  # OTSubType for documents in OTCS
+
+orchestrator:
+  auth:
+    url: ${AUTH_URL:https://myhostname/cs/cs.exe}  # Full URL to auth endpoint
+    username: ${AUTH_USERNAME:admin}
+    password: ${AUTH_PASSWORD:password}
+    domain: ${AUTH_DOMAIN:}  # Optional field
+  target:
+    endpoint: ${TARGET_ENDPOINT:https://myhostname/cs/cs.exe}
+
+
+# Management & Actuator
+management:
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+  endpoint:
+    camelroutes:
+      enabled: true
+    camelcontexts:
+      enabled: true
+
+    health:
+      show-details: always
+      enabled: true
+      probes:
+        enabled: true
+      group:
+        readiness:
+          #enabled: true
+          include: ["camelHealth"]
+        liveness:
+          #enabled: true
+          include: "*"
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.orchestrator: DEBUG
+    org.apache.camel: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+ 

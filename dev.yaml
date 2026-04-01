@@ -1,0 +1,192 @@
+#ImageValue: azcontainerregistryd1.azurecr.io/edms:latest
+
+application:
+  name: ot-orchestrator
+  component: ot-orchestrator
+  labels:
+    - key: azure.workload.identity/use
+      name: "true"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 75
+
+#configMap:
+  #AZURE_KEYVAULT_URI: https://erebor-kv-dba-dev.vault.azure.net/
+  #ASPNETCORE_ENVIRONMENT: Development
+  #ASPNETCORE_HTTP_PORTS: 8080
+  #ASPNETCORE_URLS: http://+:8080/
+
+serviceAccount:
+  enabled: true
+  clientID: "20af6f91-a590-4ab3-be87-3f35b993460c"
+
+######################################################################################
+## Mandating - container should run as non root user, to disable root file system access.
+######################################################################################
+securityContext:
+  enabled: false
+  readOnlyRootFilesystem: file
+
+limitranges:
+  maxMemory: 4Gi  # Maximum memory limit per container
+
+######################################################
+## blobpvc Configuration -- 
+## To mount storage account blob on top of the kubernetes container.
+#Note: Workload Managed identity should be provided with blob data storage access 
+######################################################
+#blobpvc:
+  #enabled: true                     # - Flag to enable/disable the blobpvc functionality
+  #storage: 5Gi                      #   Storage size you can set it up as per your requirement
+  #storageAccountName: ereborsadev  #  Storage Account Name
+  #blobContainerName: documents          #   Blob container Name within Storage Account
+  #resourceGroupName: EDMS-Dev-RG #   Storage Account Resource Group Name
+  #path: "/input/payloads"                #   I set mount path to /mnt/blob as a default in Chart. You can overwrite. (optional) later discussion
+azurefilepvc:
+  enabled: true
+  shares:
+    - name: ot-orchestrator-file-share-1                      # Unique name for this share
+      #pvName: "edmssadev-sftp-azurefileshare-pv"    # Optional: custom PV name (auto-generated if empty)
+      #pvcName: "edmssadev-sftp-azurefileshare-pvc"  # Optional: custom PVC name (auto-generated if empty)
+      storage: 30Gi                                 # Storage capacity
+      storageAccountName: edmssadev                 # Azure Storage Account name
+      shareName: sftp-volume                        # Azure File Share name
+      resourceGroupName: EDMS-Dev-RG                # Resource group where storage account resides
+      persistentVolumeReclaimPolicy: Retain         # Retain or Delete
+      mountPath: "/mnt/sftp-volume"        #"/mnt/sftp-volume"  # Mount path inside the container
+      readOnly: false
+
+
+######################################################
+## secretsCSI Configuration
+######################################################
+#dbsecretCSI:
+  #enabled: true
+  #keyvaultName: "MtLoganRe-KV-DBA-DEV"
+  #secrets:
+   # - "Azure-SQL-MTL-SQL-User-Dev"
+
+deployment:
+  terminationGracePeriodSeconds: 30
+  replicas: 1
+  strategy: 
+    # Ramped Slow Rollout
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0      
+  resources:
+    limits:
+      cpu: 1
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 1Gi
+  startupProbe:
+    path: /actuator
+    port: 8080
+    failureThreshold: 30
+    periodSeconds: 10
+    initialDelaySeconds: 50
+
+  livenessProbe:
+    path: /actuator/health
+    port: 8080
+    failureThreshold: 3
+    periodSeconds: 15
+    timeoutSeconds: 5
+
+  readinessProbe:
+    path: /actuator/health
+    port: 8080
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+
+configMap:
+  KAFKA_HOSTNAME: lkc-0593zp.domqgq121ew.eastus2.azure.confluent.cloud:9092
+  AZURE_KEYVAULT_URI: https://edms-kv-dev.vault.azure.net/
+  KAFKA_TOPIC: everest.escape.submission_api.submisison_event
+  KAFKA_GROUPID: submission_api_GROUPID_fresh_2026
+  KAFKA_CLIENTID: submission_api_CLIENT_ID_fresh_2026
+  OTCS_BASE_URL: http://otcs-frontend.dev-edms.svc.cluster.local/cs/cs.exe
+  OTCS_USERNAME: otadmin@otds.admin
+  OTCS_PASSWORD: EDMSAdminPassword1!
+  BASE_WEBREPORTS_URL: http://otcs-frontend.dev-edms.svc.cluster.local/cs/cs.exe/api/v1/webreports/GetCategoryFields?format=json&suppress_response_codes=string&ENV=DEV
+  SSL_BYPASS_ENABLED: false
+  
+
+
+#useDirectEnv: true
+#env:
+  #AZURE_KEYVAULT_URI: https://edms-kv-dev.vault.azure.net/
+
+######################################################
+## K8S Service Configuration
+######################################################
+
+service:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+    #- name: Netty
+      #port: 8084
+      #targetPort: 8084
+  additionalPorts:
+     - name: netty
+       port: 8084
+       targetPort: 8084
+
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    - key: nginx.ingress.kubernetes.io/proxy-body-size # Allows unlimited body size to avoid `entity too large` errors.
+      name: '5m'
+    - key: nginx.ingress.kubernetes.io/proxy-connect-timeout  # below annotations added to resolve upstream connection timeout to handle long connections.
+      name: '60'
+    - key: nginx.ingress.kubernetes.io/proxy-send-timeout
+      name: '60'
+    - key: nginx.ingress.kubernetes.io/proxy-read-timeout
+      name: '60'
+    - key: nginx.ingress.kubernetes.io/send-timeout
+      name: '60'
+
+  hosts:
+    - host: ot-orchestrator.dev.caas.everestre.net
+      paths:
+        # Actuator endpoints (Spring Boot) - Port 8080
+        - path: /actuator
+          pathType: Prefix
+        # Netty endpoints - Port 8084 (all under /api context)
+        - path: /api/v1/SearchDocuments
+          pathType: Prefix
+          port: 8084
+        - path: /api/v1/DownloadDocument
+          pathType: Prefix
+          port: 8084
+        - path: /api/v1/UploadDocument
+          pathType: Prefix
+          port: 8084
+        - path: /api/v1/UpdateMetadata
+          pathType: Prefix
+          port: 8084
+        - path: /api/v1/StartLargeDocument
+          pathType: Prefix
+          port: 8084 
+        - path: /api/v1/UploadLargeDocument
+          pathType: Prefix
+          port: 8084   
+
+  tls:
+     - hosts:
+        - ot-orchestrator.dev.caas.everestre.net
+ 
