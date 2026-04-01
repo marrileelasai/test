@@ -1,0 +1,65 @@
+variables:
+  #############################################################################################################################################################
+  ###                                                              Env Release Configurables                                                                ###
+  #############################################################################################################################################################
+
+  #########################
+  ##   ARM Based Deployment  ##
+  #################################
+  # ARM_Service_Connection: 'ReInsClaimsSummary-Dev-RG'
+
+  #########################
+  ##           AKS           ##
+  #################################
+  Deploy_Aks_ClusterName: 'caas-green-dev'
+  Deploy_Aks_Cots_App: 'false'
+  Deploy_Aks_Namespace: 'dev-edms'
+    #########################
+  ##     Database Backup     ##
+#################################
+  # PreDeploy_DatabaseBackup_Enabled: 'true'
+  # PreDeploy_DatabaseBackup_Server: 'ENAZGWPCSQLS1.everestre.net'
+  # PreDeploy_DatabaseBackup_Database: 'PolicyCenter'
+  # PreDeploy_DatabaseBackup_File: 'E:\Backup\CICD\PolicyCenter_Backup.bak'
+  # PreDeploy_DatabaseBackup_User: 'DB_DevOps_Stage'
+  # PreDeploy_DatabaseBackup_Password: '$(DB-DevOps-Stage-Password)'
+
+    #########################
+  ##           GWPC          ##
+#################################
+  # Deploy_GWPC_TomCatServer: 'ENGWPCAPD3.everestre.net'
+  # Deploy_GWPC_TomCatService: 'tomcat8'
+
+    #########################
+  ##       Multi Deploy      ##
+#################################
+
+###   This is a '|' delimited list of variables to be updated/overriden per parallel deployment run
+###   with each parallel run must be on a separate line
+###   The first delimited key=value pair uses the value to designate the deployment job's displayname.
+###   All delimited key=value pairs will be defined as variables are runtime and can be used accordingly in their downstream master template under the condition
+###   that Multi_Deploy_Enabled is set to 'true' at the pipeline service config level and master template is set to use the variable accordingly
+
+  # Multi_Deploy_Overrides: |-
+  #   Node=BT1|Deploy_GWPC_TomCatServer=ENGWPCBTS1.everestre.net
+  #   Node=BT2|Deploy_GWPC_TomCatServer=ENGWPCBTS2.everestre.net
+  #   Node=AP1|Deploy_GWPC_TomCatServer=ENGWPCAPS1.everestre.net
+  #   Node=AP2|Deploy_GWPC_TomCatServer=ENGWPCAPS2.everestre.net
+
+    #########################
+  ##           ESB           ##
+#################################
+  # Deploy_ESB_Node_Count: '1'
+  # Deploy_Config_Updates_KeyVault: 'ERDevOps-KeyVault'
+  # Deploy_Config_Updates_Subscription: 'ERDevOps-KeyVault'
+  # Deploy_Config_Updates_Secrets: 'IntegrationCertDev,IntegrationCertDev,IntegrationMicrosoftclientid-Dev,IntegrationMicrosoftclientsecret-Dev,IntegrationMicrosoftscope-Dev'
+  # Deploy_Config_Updates_Source: '$(Pipeline.Workspace)/drop/DEV/AccountAPIV6_DEV_Override.properties'
+  # Deploy_Config_Updates_KeyValues: '$("com.everestre.esb.integration.services.sub_AccountAPIV6_CreateEdgeAccount#Cert_Key_Acc=$(IntegrationCertDev)","com.everestre.esb.integration.services.sub_AccountAPIV6_CreateEdgeAccount#Cert_StorePWD_Acc=$(IntegrationCertDev)","com.everestre.esb.integration.services.sub_MicrosoftAzureToken#Microsoftclientid=$(IntegrationMicrosoftclientid-Dev)","com.everestre.esb.integration.services.sub_MicrosoftAzureToken#Microsoftclientsecret=$(IntegrationMicrosoftclientsecret-Dev)","com.everestre.esb.integration.services.sub_MicrosoftAzureToken#Microsoftscope=$(IntegrationMicrosoftscope-Dev)")'
+
+    ##########################
+  ##           APIM           ##
+##################################
+  # Deploy_TF_AzServiceConnection: 'EverestAPIM-Dev-RG'
+  # Deploy_TF_ResourcegrpName: 'EverestAPIM-Dev-RG'
+  # Deploy_TF_StorageActName: 'usapimterraformstated1'
+  # Deploy_TF_StorageContainerName: 'apidevopsdevstatecontainer'

@@ -1,0 +1,323 @@
+variables:
+  # Enable Gradle JFrog build
+  Application_BuildType: 'gradleV2'
+
+  # Gradle build configuration
+  Build_Gradle_Tasks: 'build'
+  Build_Gradle_Configuration: 'release'
+  Build_Gradle_UseWrapper: 'false'
+  Build_Gradle_UsesPlugin: 'false'
+
+  # Repository configuration (using defaults)
+  Build_Gradle_SourceRepo: 'everest-libs-release'
+
+  # Maven descriptor deployment
+  Build_Gradle_DeployMavenDesc: 'true'
+  Build_Gradle_DeployIvyDesc: 'false'
+
+  # Java configuration
+  Build_Gradle_JavaHomeSelection: 'JDKVersion'
+  Build_Gradle_JdkVersion: '21'
+  Build_Gradle_JdkArchitecture: 'x64'
+
+  # Docker Build
+  ApplicationName: 'ot-orchestrator'
+  Build_Docker: 'true'
+  registryType: 'ACR-JFrogBuild'
+
+  #AKS Deploy
+  Deploy_Aks_Enabled: 'true'
+  Deploy_Aks_ChartName: 'k8s-deployment-chart'
+  #Deploy_Aks_ChartVersion: 'latest'
+  Deploy_Aks_ChartVersion: '0.0.0'
+#############################################################################################################################################################
+###                                                                  Global Configurables                                                                 ###
+#############################################################################################################################################################
+
+  # Build_SourceDescription: 'SomeChangeDescription'
+  # Build_SourceVersion: 0.4.5
+
+  # Multi_Deploy_Enabled: 'true'
+
+    ####################################
+  ##          Config Updates           ##
+############################################
+  #Deploy_Config_Updates: 'true'
+
+    #########################
+  ##           AKS           ##
+#################################
+  # ApplicationName: 'basecamphub'
+  # ContainerRegistryName: 'AzContainerRegistryD1'
+
+    ############################################
+  ##           Artifactory Publishing           ##
+####################################################
+  # PublishPackage: 'true'
+  # PublishPackage_Feed: 'Everest-Org-Common-Packages'
+  # PublishPackage_Type: 'npm'
+  # PublishPackage_Path: '$(Build.ArtifactStagingDirectory)'
+
+    ############################################
+  ##                File Copies                 ##
+####################################################
+
+  #PreBuild_File_Copies: |
+  #  Source/File.json>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  Source/Folder>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  Source/Folder>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/FolderNewName
+  #  Source/appsettings.Dev.json>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/appsettings.json
+  #  Source/*.json>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  source/appsettings.De*.json>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/appsettings.json ## If more than one file is found with that wildcard name, appsettings.json will be set to the last file found, use with caution with wildcards and renames
+
+  #PostBuild_File_Copies: |
+  #  Source/File.json>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  Source/Folder>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  Source/Folder>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/FolderNewName
+  #  Source/appsettings.Dev.json>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/appsettings.json
+  #  Source/*.json>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  source/appsettings.De*.json>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/appsettings.json ## If more than one file is found with that wildcard name, appsettings.json will be set to the last file found, use with caution with wildcards and renames
+
+  #PreDeploy_File_Copies: |
+  #  Source/File.json>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  Source/Folder>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  Source/Folder>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/FolderNewName
+  #  Source/appsettings.Dev.json>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/appsettings.json
+  #  Source/*.json>Destination/Ends/In/Frontslash/If/To/Folder/
+  #  source/appsettings.De*.json>Destination/Does/Not/End/In/Frontslash/If/Specifying/Name/appsettings.json ## If more than one file is found with that wildcard name, appsettings.json will be set to the last file found, use with caution with wildcards and renames
+
+    ############################################
+  ##                Multi Build                 ##
+####################################################
+
+#  Multi_Build: 'true'
+#   Multi_Build_Parallelism: '5'
+#   Multi_Build_Configuration: >-
+#     {
+#         "DEV": {
+#             "Build_DotNetAsp_Configuration": "DEV",
+#             "Build_DotNetAsp_Platform": "any cpu"
+#         },
+#         "QA": {
+#             "Build_DotNetAsp_Configuration": "QA",
+#             "Build_DotNetAsp_Platform": "any cpu"
+#         },
+#         "UAT": {
+#             "Build_DotNetAsp_Configuration": "UAT",
+#             "Build_DotNetAsp_Platform": "any cpu"
+#         },
+#         "PROD": {
+#             "Build_DotNetAsp_Configuration": "PROD",
+#             "Build_DotNetAsp_Platform": "any cpu"
+#         },
+#         "HF": {
+#             "Build_DotNetAsp_Configuration": "HF",
+#             "Build_DotNetAsp_Platform": "any cpu"
+#         }
+#     }
+
+#############################################################################################################################################################
+###                                                                  Build Configurables                                                                  ###
+#############################################################################################################################################################
+
+    #############################
+  ##       Power Platform        ##
+#####################################
+  # Application_BuildType: 'powerplatform'
+  
+  # Build_PowerPlatform_Publish: 'false'
+  # Build_PowerPlatform_AdminVersion: '2.0.66'
+  # Build_PowerPlatform_XrmTPDVersion: '3.3.0.891'
+  # Build_PowerPlatform_CheckerVersion: '1.0.12'
+  # Build_PowerPlatform_CrmSCTVersion: '9.1.0.44'
+  # Build_PowerPlatform_XrmOMAVersion: '1.2.0.1'
+  # Build_PowerPlatform_SolutionType: 'Managed'
+  # Build_PowerPlatform_ExportBranch: 'publish'
+  # Build_PowerPlatform_PowerPlatformSPN: 'PowerPlatform-EmployeeAnalytics-DevOps-Dev'
+  # Build_PowerPlatform_Solution: 'EmployeeAnalyticsSolution'
+
+    #############################
+  ##            GW_PC            ##
+#####################################
+  # Application_BuildType: 'gwpc'
+  
+  # Build_GWPC_JavaVersion: '' ### Required - The version of Java that is preinstalled on the Build/Release server to be used for build - Default: '8' 
+  # Build_GWPC_BuildCmd: '' ### Required - Command or path for build or to executable - Default: 'gwb.bat'
+  # Build_GWPC_BuildArgs: '' ### Required - Arguments to be passed to buildCmd - Default: 'warTomcatDbcp -DincludeGtest=true'
+  # Build_GWPC_TestCmd: '' ### Required - Command or path for test or to executable - Default: 'gwb.bat'
+  # Build_GWPC_TestArgs: '' ### Required - Arguments to be passed to testCmd - Default: 'test -Dtestpackage=com.everestre'
+
+    #############################
+  ##          Logic App          ##
+#####################################
+  #Application_BuildType: 'logicapp'
+  
+  ## Parsed top to bottom, Includes on top and Excludes as you go down to narrow the scope - if only one path (with *), does not have to be a here-string
+  #Build_LogicApp_Project: |
+  #   **/*.deployproj
+  #   !**/tests/**/*.deployproj
+
+    #########################
+  ##           ADF           ##
+#################################
+  #Application_BuildType: 'adf'
+  #Build_ADF_SourceDev: '<Resource id>' ## Example '/subscriptions/10a0700e-a76a-462c-a11c-9af0bd677313/resourceGroups/Serraview-Dev-RG/providers/Microsoft.DataFactory/factories/erazserraviewadfd1'
+
+  ### Advanced ###
+  #Build_ADF_NodeVersion: '>=20.x' ## DevOps Usage: Specify version of Node for ADF Modules used for build
+
+    ##########################
+  ##           APIC           ##
+##################################
+  #Application_BuildType: 'apic'
+
+    ##########################
+  ##           APIM           ##
+##################################
+  # Application_BuildType: 'terraform'
+  # Build_TF_StateFileName: ''
+  # Build_TF_Provider: 'azurerm'
+  # Build_TF_Directory: 'IAC/maintain_CSR-GRP'
+  # Application_Name: ''
+
+
+    ##########################
+  ##           PEGA           ##
+##################################
+  #Application_BuildType: 'pega'
+  
+  #Build_PEGA_Key: '$(PEGA-EverestDevOpsAdmin-Dev)'
+  #Build_PEGA_UnitTestGroup: "FNOL:Authors"
+  #Build_PEGA_UnitTestSuite: "EVERST-FNOL-WORK!TS_FNOLUNITTESTSUITE"
+
+    #############################
+  ##           PowerBI           ##
+#####################################
+  #Application_BuildType: 'powerbi'
+
+    #########################
+  ##           ESB           ##
+#################################
+  # Application_BuildType: 'esb'
+  # Build_ESB_RefData: 'ESB/ESB-Common/Feature/EverLink_Release5_CA'
+
+    #############################
+  ##           DotNetFX          ##
+#####################################
+  # Application_BuildType: 'dotnetasp'
+  # Build_DotNetAsp_Platform: 'any cpu'
+  # Build_DotNetAsp_Projects: |
+  #   **\*.sln
+  # Build_DotNetAsp_CustomMsBuildArgs: '/p:OutDir=$(Build.ArtifactStagingDirectory)'
+  # Build_DotNetAsp_Configuration: 'release'
+
+    ################################
+  ##           DotNetCore           ##
+########################################
+  # Application_BuildType: 'dotnetcore'
+  # Build_DotNetCore_Platform: 'any cpu'
+
+  ## Parsed top to bottom, Includes on top and Excludes as you go down to narrow the scope - if only one path (with *), does not have to be a here-string
+  # Build_DotNetCore_Projects: |
+  #   **/*.csproj
+  #   !**/tests/**/*.csproj
+
+  # Build_DotNetCore_Configuration: 'release'
+  # Build_DotNetCore_UseGlobalJson: "false"
+  # Build_DotNetCore_Version: "8.0.101" ### Use when Build_DotNetCore_UseGlobalJson = false
+  # Build_DotNetCore_VstsFeed: "693c4a44-6437-4334-a9bd-7bfb151f64bf"
+
+    ############################
+  ##           Python           ##
+####################################
+  # Application_BuildType: 'python'
+  # Build_Python_Version: "3.x"
+  # Build_Python_PublishType: "Archive"
+
+    #############################
+  ##           Angular           ##
+#####################################
+  # Application_BuildType: 'npm'
+  # Build_NPM_EnvNames: ''
+  # Build_NPM_InstallCmd: 'install --legacy-peer-deps'
+  # Build_NPM_BuildCmd: 'build'
+  # Build_NPM_Node_Version: '12.22.12'
+  # Build_NPM_Python_Version: '3.7.x'
+
+    ############################
+  ##           Docker           ##
+####################################
+  # Build_Docker: 'true'
+
+#############################################################################################################################################################
+###                                                                 Release Configurables                                                                 ###
+#############################################################################################################################################################
+
+    #############################
+  ##            GW_PC            ##
+#####################################
+  # Deploy_GWPC_Enabled: 'true'
+
+    #############################
+  ##          Logic App          ##
+#####################################
+  #Deploy_LogicApp_Enabled: 'true'
+
+    #########################
+  ##           ADF           ##
+#################################
+  #Deploy_ADF_Enabled: 'true'
+
+    ##########################
+  ##           APIC           ##
+##################################
+  #Deploy_APIC_Enabled: true
+  #Deploy_APIC_Space: 'Insurance'
+
+    ##########################
+  ##           APIM           ##
+##################################
+  # Deploy_Terraform_Enabled: 'true'
+  # Deploy_TF_ModuleRef: 'APIM_IntegrationAPIS/APIM-Terraform-Module/master'
+  # Deploy_TF_AppName: ''
+
+    ##########################
+  ##           PEGA           ##
+##################################
+  #Deploy_Pega_Enabled: 'true'
+
+    #############################
+  ##           PowerBI           ##
+#####################################
+  #Deploy_PowerBI_Enabled: true
+
+    #########################
+  ##            ESB          ##
+#################################
+  # Deploy_ESB_Enabled: 'true'
+  # Deploy_Config_Updates: 'true'
+  # Deploy_Config_Updates_Type: 'JavaProperties'
+
+    #########################
+  ##           AKS           ##
+#################################
+  # Deploy_Aks_Enabled: 'true' 
+  # Deploy_Aks_ChartName: 'k8s-deployment-chart'
+  # Deploy_Aks_ChartVersion: '0.5.0'
+  # Deploy_Aks_Timeout: '10m'
+
+    #############################
+  ##           Web App           ##
+#####################################
+  # Deploy_WebApp_Enabled: 'true'
+  # Deploy_WebApp_Type: 'webAppLinux'
+  # Deploy_WebApp_Name: 'reinscswebapp'
+  # Deploy_WebApp_Stack: 'PYTHON|3.11'
+  # Deploy_WebApp_Startup: 'streamlit run app.py'
+
+    ###############################
+  ##           Functions           ##
+#######################################
+  # Deploy_Functions_Enabled: 'true'
+  # Deploy_Functions_Type: 'functionAppLinux'
+  # Deploy_Functions_Stack: 'PYTHON|3.9' Allowed values: DOTNET|6.0, DOTNET-ISOLATED|6.0, DOTNET-ISOLATED|7.0, DOTNET-ISOLATED|8.0, JAVA|8, JAVA|11, JAVA|17, JAVA|21, NODE|14, NODE|16, NODE|18, NODE|20, PYTHON|3.8, PYTHON|3.9, PYTHON|3.10, PYTHON|3.11

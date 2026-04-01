@@ -1,0 +1,48 @@
+/*pluginManagement {
+    repositories {
+        gradlePluginPortal()     // REQUIRED for org.springframework.boot plugin
+        mavenCentral()
+        google()
+    }
+}
+
+/*dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositories {
+        mavenCentral()
+        google()
+    }
+}*/
+
+//rootProject.name = "ot-orchestrator" 
+
+
+pluginManagement {
+  repositories {
+    // TEMPORARY: Use local files until plugin firewall issues are resolved.
+    maven {
+        url = file('./plugins/gradle-repo')
+    }
+
+    // Upstream sources. Gradle doesnt work until more firewall changes.
+    // gradlePluginPortal()
+    mavenCentral()
+
+    // Uncomment when problem with ADO/JF cli in CI is understood.
+    // maven {
+    //     url = uri("https://jfrog.everestre.net/artifactory/gradle-plugins-remote")
+    //     credentials {
+    //         username = settings['artifactory_user']
+    //         password = settings['artifactory_password']
+    //     }
+    // }
+    // maven {
+    //     url = uri("https://jfrog.everestre.net/artifactory/everest-maven-remote")
+    //     credentials {
+    //         username = settings['artifactory_user']
+    //         password = settings['artifactory_password']
+    //     }
+    // }
+  }
+}
+

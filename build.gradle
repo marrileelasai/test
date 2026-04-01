@@ -1,0 +1,185 @@
+plugins {
+    id 'java'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'maven-publish'
+    //id 'com.jfrog.artifactory' version '5.2.0'
+}
+
+
+
+group = 'com.orchestrator'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+ext {
+    camelVersion = '4.14.4'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+// ─── Repositories ───────────────────────────────────────────────────────────
+repositories {
+    mavenCentral()  // Try Maven Central FIRST
+    
+    // Artifactory for custom internal dependencies
+    maven {
+        url = uri("${artifactory_contextUrl}/everest-libs-release")
+        credentials {
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+        }
+    }
+}
+
+// Let Spring Boot manage OpenTelemetry versions
+
+// ─── Custom Tasks ───────────────────────────────────────────────────────────
+
+
+tasks.register("bootRunWithTracing", org.springframework.boot.gradle.tasks.run.BootRun) {
+    group = "application"
+    description = "Run the app with OpenTelemetry Java agent"
+    mainClass.set("com.orchestrator.OTOrchestratorApplication")
+    classpath = sourceSets.main.runtimeClasspath
+
+    // Provide inner placeholders as ENV (or as -D…; either works with your resolver)
+    environment "DB_VAULTURL", "https://erebor-kv-dba-dev.vault.azure.net/"
+    environment "AZURE_KEYVAULT_URI", "https://erebor-kv-dev.vault.azure.net/"
+
+    doFirst {
+        jvmArgs = [
+                // ═════════ SSL BYPASS FOR LOCAL DEVELOPMENT ONLY ═════════
+                // In production pods, this property will NOT be set,
+                // so SSL certificate validation will be enforced
+                "-Dssl.bypass.enabled=true",
+                
+                "-Djava.awt.headless=false",                // required for browser pop-up
+                "-Daz.kv.auth-mode=interactive",            // force InteractiveBrowserCredential locally
+                // (Optional) Pin tenant / use a known dev app registration:
+                // "-DAZURE_TENANT_ID=<tenant-guid>",
+                // "-DAZURE_CLIENT_ID=<public-client-app-id>",
+
+                // start-JMX/JConsole monitoring (auto-assigns port for local monitoring)
+                "-Dcom.sun.management.jmxremote",
+                "-Dcom.sun.management.jmxremote.authenticate=false",
+                "-Dcom.sun.management.jmxremote.ssl=false",
+                
+                // Heap size configuration
+                "-Xms512m",      // Initial heap size
+                "-Xmx4096m",     // Max heap size (4GB)
+                
+                // Kafka configuration
+                "-DKAFKA_HOSTNAME=lkc-0593zp.domqgq121ew.eastus2.azure.confluent.cloud:9092",
+                "-DAZURE_KEYVAULT_URI=https://edms-kv-dev.vault.azure.net/",
+                "-DKAFKA_TOPIC=everest.escape.submission_api.submisison_event",
+                "-DKAFKA_GROUPID=submission_api_GROUPID_fresh",
+                "-DKAFKA_CLIENTID=submission_api_CLIENT_ID_fresh",
+                "-DOTCS_BASE_URL=https://otcs.dev.caas.everestre.net/cs/cs.exe",
+                "-DOTCS_USERNAME=otadmin@otds.admin",
+                "-DOTCS_PASSWORD=EDMSAdminPassword1!",
+                "-DBASE_WEBREPORTS_URL=https://otcs.dev.caas.everestre.net/cs/cs.exe/api/v1/webreports/GetCategoryFields?format=json&suppress_response_codes=string&ENV=DEV",
+                "-DSSL_BYPASS_ENABLED=true"
+        ]
+    }
+}
+
+tasks.register('copyFatJar', Copy) {
+    dependsOn bootJar
+    from(bootJar.archiveFile){
+        rename { String fileName ->
+            'ot_orchestrator.jar' // static name so docker file doesnt need changing
+        }
+    }
+    into "$buildDir/static"
+
+}
+tasks.build {
+    dependsOn 'copyFatJar'
+}
+
+dependencies {
+    // Spring Boot Starters - for object mapper
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    //Actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    //implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.52'
+
+    // Apache Camel - Core
+    implementation "org.apache.camel.springboot:camel-spring-boot-starter:${camelVersion}"
+    implementation "org.apache.camel.springboot:camel-rest-starter:${camelVersion}"
+    implementation "org.apache.camel.springboot:camel-jackson-starter:${camelVersion}"
+    //implementation "org.apache.camel.springboot:camel-servlet-starter:${camelVersion}"
+    implementation "org.apache.camel.springboot:camel-http-starter:${camelVersion}"
+    implementation "org.apache.camel.springboot:camel-json-validator-starter:${camelVersion}"
+
+    // Apache HTTP Components for SSL configuration - Let Spring Boot manage version
+    //implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
+
+    // Azure SDK
+    implementation 'com.azure:azure-security-keyvault-secrets:4.7.0'
+    implementation 'com.azure:azure-identity:1.14.0'
+
+    //netty - versions managed by Camel BOM
+    implementation "org.apache.camel.springboot:camel-netty-starter:${camelVersion}"
+    implementation "org.apache.camel:camel-netty:${camelVersion}"
+    implementation "org.apache.camel:camel-netty-http:${camelVersion}"
+
+
+    //kafka
+    implementation "org.apache.camel.springboot:camel-kafka-starter:${camelVersion}"
+    
+    // JSONPath for efficient JSON parsing
+    implementation 'com.jayway.jsonpath:json-path:2.9.0'
+    
+    // Camel Caffeine cache for in-memory caching
+    implementation "org.apache.camel.springboot:camel-caffeine-starter:${camelVersion}"
+    
+    // Apache HTTP Client for streaming multipart uploads
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.httpcomponents:httpmime:4.5.14'
+    
+    // Jackson for JSON (without spring-boot-starter-web)
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    
+    // Lombok for reducing boilerplate -required for @Slf4j, @RequiredArgsConstructor, and other annotations
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Tomcat - REMOVED (no longer needed without servlet)
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.52'
+
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.assertj', module: 'assertj-core'
+    }
+    testImplementation "org.apache.camel:camel-test-spring-junit5:${camelVersion}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    enabled = false;
+}
+
+// ─── BootJar Configuration ──────────────────────────────────────────────────
+bootJar {
+    archiveFileName = "ot_orchestrator.jar"
+    // launchScript() // optional
+}
+
+
+// Configuration for RHEL OpenJDK 22 deployment
+/*tasks.named('bootJar') {
+    archiveFileName = "${project.name}-${project.version}.jar"
+    launchScript()
+    enabled = true;
+}*/
